@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "CommonJS",
+    "outDir": "./bin",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": ["./src/**/*"]
+}
