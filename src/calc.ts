@@ -87,6 +87,7 @@ function formatValue(val: number): string {
 
 function outputNumberToDisplay(val: number): void {
 	outputToDisplay(formatValue(val));
+	//outputToDisplay(val.toFixed(10));
 }
 
 function getCalcFuncName(val: CalcFunc): string {
@@ -94,9 +95,10 @@ function getCalcFuncName(val: CalcFunc): string {
 }
 
 let current_Operator: Operator = Operator.None;
-let modifier_2ND: Boolean = false;
-let modifier_INV: Boolean = false;
-let modifier_HYP: Boolean = false;
+let modifier_Angle: Angle_Format = Angle_Format.Degrees;
+let modifier_2ND: boolean = false;
+let modifier_INV: boolean = false;
+let modifier_HYP: boolean = false;
 
 let error_Flag: string = "";
 
@@ -112,13 +114,19 @@ function clear_Modifiers(): void {
 	modifier_INV = false;
 }
 
+function clear_Arg_Input(): void {
+	arg_Input = 0.0;
+	input_Decmial_Shift = 0;
+}
+
 function reset_Arg_Param(num: number): void {
 	clear_Modifiers();
 	arg_Input = num;
+	arg_Pointer = 0;
+	arg_Param.fill(0);
 	arg_Param[0] = num;
 	input_Decmial_Shift = 0;
-	arg_Pointer = 0;
-	arg_Input = arg_Param[arg_Pointer];
+	
 }
 function clear_Arg_Param(): void {
 	clear_Modifiers();
@@ -130,9 +138,7 @@ function clear_Arg_Param(): void {
 
 function calc_Reset(): void {
 	current_Operator = Operator.None;
-	modifier_2ND = false;
-	modifier_HYP = false;
-	modifier_HYP = false;
+	clear_Modifiers();
 	clear_Arg_Param();
 	outputNumberToDisplay(arg_Input);
 }
@@ -141,15 +147,24 @@ window.addEventListener("load", function() { calc_Reset(); } );
 function calc_Evaluate() {
 	arg_Param[arg_Pointer] = arg_Input;
 	reset_Arg_Param(func_Evaluate(current_Operator));
+	current_Operator = Operator.None;
 }
-
-function next_Arg_Param(oper: Operator): void {
-	if (oper != current_Operator) {
+function set_Operation(oper: Operator): void {
+	if (oper != Operator.None) {
 		calc_Evaluate();
 		current_Operator = oper;
-		next_Arg_Param(oper);
 		return;
 	}
+}
+function set_Arg_Param(arg_Index: number): void {
+	arg_Param[arg_Pointer] = arg_Input;
+	clear_Modifiers();
+	arg_Pointer = arg_Index;
+	arg_Pointer = (arg_Pointer < arg_Param.length && arg_Pointer > 0) ? arg_Pointer : 0;
+	input_Decmial_Shift = 0;
+	arg_Input = arg_Param[arg_Pointer];
+}
+function next_Arg_Param(): void {
 	arg_Param[arg_Pointer] = arg_Input;
 	clear_Modifiers();
 	arg_Pointer++;
@@ -157,17 +172,11 @@ function next_Arg_Param(oper: Operator): void {
 	input_Decmial_Shift = 0;
 	arg_Input = arg_Param[arg_Pointer];
 }
-function previous_Arg_Param(oper: Operator): void {
-	if (oper != current_Operator) {
-		calc_Evaluate();
-		current_Operator = oper;
-		next_Arg_Param(oper);
-		return;
-	}
+function previous_Arg_Param(): void {
 	arg_Param[arg_Pointer] = arg_Input;
 	clear_Modifiers();
 	arg_Input = 0.0;
-	input_Decmial_Shift = 0;
+	input_Decmial_Shift = 1;
 	arg_Pointer--;
 	arg_Pointer = (arg_Pointer >= 0) ? arg_Pointer : 0;
 	arg_Input = arg_Param[arg_Pointer];
@@ -178,8 +187,11 @@ function process_Digit(num: number): void {
 		console.log("Error: Cannot process digit `" + num + "`, out of bounds");
 		return;
 	}
+	if (arg_Input < 0.0) {
+		num = -num;
+	}
 	if (input_Decmial_Shift > 0) {
-		console.log("Error: Invalid decimal-shift `" + input_Decmial_Shift + "`");
+		clear_Arg_Input();
 		return;
 	}
 	if (input_Decmial_Shift == 0) {
@@ -188,8 +200,33 @@ function process_Digit(num: number): void {
 		return;
 	}
 	if (input_Decmial_Shift < 0) {
-		arg_Input += num * Math.pow(10,input_Decmial_Shift);
+		arg_Input += num * Math.pow(10, input_Decmial_Shift);
 		input_Decmial_Shift--;
+		return;
+	}
+}
+
+function remove_Digit(): void {
+	if (input_Decmial_Shift > 0) {
+		clear_Arg_Input();
+		return
+	}
+	if (input_Decmial_Shift == 0) {
+		arg_Input = Math.trunc(arg_Input / 10.0);
+		return;
+	}
+	if (input_Decmial_Shift == -1) {
+		arg_Input = Math.trunc(arg_Input);
+		input_Decmial_Shift++;
+		return;
+	}
+	if (input_Decmial_Shift < -1) {
+		let mask: number = arg_Input - Math.trunc(arg_Input);
+		mask *= Math.pow(10, -(input_Decmial_Shift + 2));
+		mask = mask - Math.trunc(mask);
+		mask *= Math.pow(10, (input_Decmial_Shift + 2));
+		arg_Input -= mask;
+		input_Decmial_Shift++;
 		return;
 	}
 }
@@ -210,9 +247,108 @@ function get_Numpad_Value(num: CalcFunc) {
 	}
 }
 
+
+function process_Arg2(func: CalcFunc): void {
+	switch(func) {
+		default:
+			console.log("Note: Arg2 Function `" + getCalcFuncName(func) + "` is not implemented yet.");
+	}
+}
+function process_Arg1(func: CalcFunc): void {
+	switch(func) {
+		case CalcFunc.Addition:
+			calc_Evaluate();
+			current_Operator = Operator.Addition;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Subtraction:
+			calc_Evaluate();
+			current_Operator = Operator.Subtraction;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Multiplication:
+			calc_Evaluate();
+			current_Operator = Operator.Multiplication;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Division:
+			calc_Evaluate();
+			current_Operator = Operator.Division;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Power:
+			calc_Evaluate();
+			current_Operator = Operator.Power;
+			next_Arg_Param();
+			break;
+		case CalcFunc.nPr:
+			calc_Evaluate();
+			current_Operator = Operator.nPr;
+			next_Arg_Param();
+			break;	
+		case CalcFunc.nCr:
+			calc_Evaluate();
+			current_Operator = Operator.nCr;
+			next_Arg_Param();
+			break;
+		default:
+			console.log("Note: Arg1 Function `" + getCalcFuncName(func) + "` is not implemented yet.");
+	}
+}
+function process_Arg0(func: CalcFunc): void {
+	switch(func) {
+		case CalcFunc.Addition:
+			current_Operator = Operator.Addition;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Subtraction:
+			current_Operator = Operator.Subtraction;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Multiplication:
+			current_Operator = Operator.Multiplication;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Division:
+			current_Operator = Operator.Division;
+			next_Arg_Param();
+			break;
+		case CalcFunc.Power:
+			current_Operator = Operator.Power;
+			next_Arg_Param();
+			break;
+		case CalcFunc.nPr:
+			current_Operator = Operator.nPr;
+			next_Arg_Param();
+			break;	
+		case CalcFunc.nCr:
+			current_Operator = Operator.nCr;		
+			next_Arg_Param();
+			break;
+		default:
+			console.log("Note: Arg0 Function `" + getCalcFuncName(func) + "` is not implemented yet.");
+	}
+}
+
+function process_Arg(func: CalcFunc): void {
+	switch (arg_Pointer) {
+		case 0:
+			process_Arg0(func);
+			break;
+		case 1:
+			process_Arg1(func);
+			break;
+		case 2:
+			process_Arg2(func);
+			break;
+		default:
+			console.log("Cannot process arg_Pointer: " + arg_Pointer);
+	}
+}
+
 function process_Input(primary: CalcFunc, secondary: CalcFunc): void {
 	let func: CalcFunc = (modifier_2ND == true && secondary != CalcFunc.None) ? secondary : primary;
-	//outputToDisplay(String(primary) + " " + String(func));
+	outputToDisplay(String(primary) + " " + String(func));
 	if (func == CalcFunc.None) {
 		console.log("Error: Function is set to null");
 	}
@@ -222,7 +358,19 @@ function process_Input(primary: CalcFunc, secondary: CalcFunc): void {
 		outputToDisplay(arg_Input);
 		return;
 	}
+	console.log("Func: `" + getCalcFuncName(func) + "`");
 	switch(func) {
+	/* Modifier Keys */
+		case CalcFunc.Shift_2nd:
+			modifier_2ND = !modifier_2ND;
+			return;
+		case CalcFunc.Inverse:
+			modifier_INV = !modifier_INV;
+			return;
+		case CalcFunc.Hyperbolic:
+			modifier_HYP = !modifier_HYP;
+			modifier_2ND = false;
+			return;
 	/* Control */
 		case CalcFunc.None:
 			console.log("Error: Function is set to null");
@@ -236,47 +384,64 @@ function process_Input(primary: CalcFunc, secondary: CalcFunc): void {
 		case CalcFunc.Evalulate:
 			calc_Evaluate();
 			break;
-		case CalcFunc.Shift_2nd:
-			modifier_2ND = !modifier_2ND;
-			break;
 		case CalcFunc.Decimal_Point:
 			input_Decmial_Shift = (input_Decmial_Shift == 0) ? -1 : input_Decmial_Shift;
 			break;
-	/* Unary */
+		case CalcFunc.Backspace:
+			remove_Digit();
+			break;
+	/* Unary Operators */
+		/* Primary */
 		case CalcFunc.Negate:
-			arg_Input = -arg_Input;
+			arg_Input = func_Negate(arg_Input);
 			break;
-		case CalcFunc.Permutation:
-			arg_Input = math_Permutation(arg_Input);
+		case CalcFunc.Reciprocal:
+			arg_Input = func_Reciprocal(arg_Input);
+			input_Decmial_Shift = 1;
 			break;
+		/* Powers and Roots */
+		case CalcFunc.Square_Root:
+			arg_Input = func_Square_Root(arg_Input);
+			input_Decmial_Shift = 1;
+			break;
+		case CalcFunc.Square:
+			arg_Input = func_Square(arg_Input);
+			input_Decmial_Shift = 1;
+			break;
+		/* Exponents and Logarithms */
+		case CalcFunc.Exponentiation:
+			arg_Input = func_Exponentiation(arg_Input);
+			input_Decmial_Shift = 1;
+			break;
+		case CalcFunc.Natural_Logarithm:
+			arg_Input = func_Natural_Logarithm(arg_Input);
+			input_Decmial_Shift = 1;
+			break;
+		case CalcFunc.Sine:
+			arg_Input = func_General_Sine(arg_Input, modifier_Angle, modifier_INV, modifier_HYP, false);
+			input_Decmial_Shift = 1;
+			break;
+		case CalcFunc.Cosine:
+			arg_Input = func_General_Cosine(arg_Input, modifier_Angle, modifier_INV, modifier_HYP, false);
+			input_Decmial_Shift = 1;
+			break;
+		case CalcFunc.Tangent:
+			arg_Input = func_General_Tangent(arg_Input, modifier_Angle, modifier_INV, modifier_HYP, false);
+			input_Decmial_Shift = 1;
+			break;
+		/* Statistics */
 		case CalcFunc.Permutation:
-			arg_Input = math_Permutation(arg_Input);
+			arg_Input = func_Permutation(arg_Input);
+			input_Decmial_Shift = 1;
 			break;
 		case CalcFunc.Random:
 			arg_Input = Math.random();
-			break;
-	/* Two Parameters */
-		case CalcFunc.Addition:
-			next_Arg_Param(Operator.Addition);
-			break;
-		case CalcFunc.Subtraction:
-			next_Arg_Param(Operator.Subtraction);
-			break;
-		case CalcFunc.Multiplication:
-			next_Arg_Param(Operator.Multiplication);
-			break;
-		case CalcFunc.Division:
-			next_Arg_Param(Operator.Division);
-			break;
-		case CalcFunc.nPr:
-			next_Arg_Param(Operator.nPr);
-			break;
-		case CalcFunc.nCr:
-			next_Arg_Param(Operator.nCr);
+			input_Decmial_Shift = 1;
 			break;
 		default:
-			console.log("Note: Function `" + getCalcFuncName(func) + "` is not implemented yet.");
+			process_Arg(func);
 	}
-	console.log("Func: `" + getCalcFuncName(func) + "`");
+	clear_Modifiers();
+	//outputNumberToDisplay(arg_Input);
 	outputToDisplay(arg_Input);
 }

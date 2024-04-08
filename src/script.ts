@@ -40,7 +40,7 @@ const CalcKey_Func: CalcFunc[]  = [
 	CalcFunc.Square_Root, CalcFunc.None       ,
 	CalcFunc.Square     , CalcFunc.None       ,
 	CalcFunc.Reciprocal , CalcFunc.None       ,
-	/* Fith Row */
+	/* Fifth Row */
 	CalcFunc.Inverse          , CalcFunc.Hyperbolic,
 	CalcFunc.Left_Parentheses , CalcFunc.Sine      ,
 	CalcFunc.Right_Parentheses, CalcFunc.Cosine    ,
@@ -208,3 +208,73 @@ function checkWindowResize() {
 window.addEventListener("resize", checkWindowResize);
 
 window.addEventListener("load", function() { generateKeyboard(); });
+
+document.addEventListener("keydown", (event: KeyboardEvent) => {
+	switch (event.key) {
+		case "0":
+			process_Input(CalcFunc.Num_0, CalcFunc.None);
+			break;
+		case "1":
+			process_Input(CalcFunc.Num_1, CalcFunc.None);
+			break;
+		case "2":
+			process_Input(CalcFunc.Num_2, CalcFunc.None);
+			break;
+		case "3":
+			process_Input(CalcFunc.Num_3, CalcFunc.None);
+			break;
+		case "4":
+			process_Input(CalcFunc.Num_4, CalcFunc.None);
+			break;
+		case "5":
+			process_Input(CalcFunc.Num_5, CalcFunc.None);
+			break;
+		case "6":
+			process_Input(CalcFunc.Num_6, CalcFunc.None);
+			break;
+		case "7":
+			process_Input(CalcFunc.Num_7, CalcFunc.None);
+			break;
+		case "8":
+			process_Input(CalcFunc.Num_8, CalcFunc.None);
+			break;
+		case "9":
+			process_Input(CalcFunc.Num_9, CalcFunc.None);
+			break;
+		case ".":
+			process_Input(CalcFunc.Decimal_Point, CalcFunc.None);
+			break;
+		case "+":
+			process_Input(CalcFunc.Addition, CalcFunc.None);
+			break;
+		case "-":
+			process_Input(CalcFunc.Subtraction, CalcFunc.None);
+			break;
+		case "*":
+			process_Input(CalcFunc.Multiplication, CalcFunc.None);
+			break;
+		case "/":
+			process_Input(CalcFunc.Division, CalcFunc.None);
+			break;
+		case "=":
+		case "Enter":
+			process_Input(CalcFunc.Evalulate, CalcFunc.None);
+			break;
+		case "~":
+			process_Input(CalcFunc.Negate, CalcFunc.None);
+			break;
+		case "^":
+			process_Input(CalcFunc.Power, CalcFunc.None);
+			break;
+		case "!":
+			process_Input(CalcFunc.Permutation, CalcFunc.None);
+			break;
+		case "Backspace":
+		case "Delete":
+			process_Input(CalcFunc.Delete, CalcFunc.None);
+			break;
+		case "Shift":
+			process_Input(CalcFunc.Shift_2nd, CalcFunc.None);
+			break;
+	}
+});
